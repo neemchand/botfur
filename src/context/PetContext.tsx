@@ -27,41 +27,67 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [pet]);
 
-  const deletePet = () => {
-    setPet(null);
-  };
-
   const feedPet = () => {
     if (!pet) return;
-    setPet({
-      ...pet,
-      stats: {
-        ...pet.stats,
-        hunger: Math.min(100, pet.stats.hunger + 20)
-      }
+    setPet(prevPet => {
+      if (!prevPet) return null;
+      const currentHunger = prevPet.stats.hunger;
+      // Happiness increases more when pet is very hungry
+      const happinessBoost = currentHunger > 75 ? 20 : 10;
+      
+      return {
+        ...prevPet,
+        stats: {
+          ...prevPet.stats,
+          hunger: Math.max(0, prevPet.stats.hunger - 20),
+          happiness: Math.min(100, prevPet.stats.happiness + happinessBoost),
+          energy: Math.min(100, prevPet.stats.energy + 5)
+        },
+        lastInteraction: new Date()
+      };
     });
   };
 
   const playWithPet = () => {
     if (!pet) return;
-    setPet({
-      ...pet,
-      stats: {
-        ...pet.stats,
-        happiness: Math.min(100, pet.stats.happiness + 20),
-        energy: Math.max(0, pet.stats.energy - 10)
-      }
+    setPet(prevPet => {
+      if (!prevPet) return null;
+      // If pet is too hungry or tired, playing makes them less happy
+      const isHungry = prevPet.stats.hunger > 80;
+      const isTired = prevPet.stats.energy < 20;
+      const happinessChange = (isHungry || isTired) ? -5 : 20;
+      
+      return {
+        ...prevPet,
+        stats: {
+          ...prevPet.stats,
+          hunger: Math.min(100, prevPet.stats.hunger + 15),
+          happiness: Math.min(100, Math.max(0, prevPet.stats.happiness + happinessChange)),
+          energy: Math.max(0, prevPet.stats.energy - 15),
+          cleanliness: Math.max(0, prevPet.stats.cleanliness - 10)
+        },
+        lastInteraction: new Date()
+      };
     });
   };
 
   const cleanPet = () => {
     if (!pet) return;
-    setPet({
-      ...pet,
-      stats: {
-        ...pet.stats,
-        cleanliness: Math.min(100, pet.stats.cleanliness + 20)
-      }
+    setPet(prevPet => {
+      if (!prevPet) return null;
+      // Happiness boost is higher when pet is very dirty
+      const happinessBoost = prevPet.stats.cleanliness < 20 ? 15 : 5;
+      
+      return {
+        ...prevPet,
+        stats: {
+          ...prevPet.stats,
+          cleanliness: Math.min(100, prevPet.stats.cleanliness + 30),
+          happiness: Math.min(100, prevPet.stats.happiness + happinessBoost),
+          energy: Math.max(0, prevPet.stats.energy - 5)
+        },
+        lastInteraction: new Date()
+      };
     });
   };
 
@@ -74,17 +100,17 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name,
           type: type as PetType,
           stats: {
-            hunger: 100,
-            happiness: 100,
-            energy: 100,
-            cleanliness: 100
+            hunger: 30,     // Slightly hungry to encourage immediate interaction
+            happiness: 70,  // Happy but room for improvement
+            energy: 100,   // Full energy to start with
+            cleanliness: 100 // Perfectly clean at start
           },
           age: 0,
           stage: 'baby',
           lastInteraction: new Date()
         });
       }, 
-      deletePet,
+      deletePet: () => setPet(null),
       feed: feedPet, 
       play: playWithPet, 
       rest: cleanPet 
