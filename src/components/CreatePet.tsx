@@ -17,7 +17,7 @@ const PetModel = ({ type }: { type: string }) => {
   return (
     <primitive 
       object={scene} 
-      scale={0.4}
+      scale={0.5}
       position={[0, -0.5, 0]}
     />
   );
@@ -26,12 +26,12 @@ const PetModel = ({ type }: { type: string }) => {
 const CreatePet: React.FC = () => {
   const [name, setName] = useState('');
   const [type, setType] = useState('cat');
-  const { createPet } = usePet();
+  const { createPet, loading, error } = usePet();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      createPet(name, type);
+      await createPet(name, type);
     }
   };
 
@@ -39,10 +39,16 @@ const CreatePet: React.FC = () => {
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold mb-8 text-center">Create Your Pet</h2>
       
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+      
       <div className="w-full h-[500px] mb-8 bg-gray-100 rounded-lg overflow-hidden">
         <Canvas 
           camera={{ 
-            position: [0, 0, 9],
+            position: [0, 0, 8],
             fov: 40
           }}
         >

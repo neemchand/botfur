@@ -12,7 +12,7 @@
 /dist
 
 # server data
-/server/pets.json
+/server/data
 
 # misc
 .DS_Store
