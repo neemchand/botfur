@@ -18,15 +18,35 @@ const StatBar: React.FC<{ label: string; value: number }> = ({ label, value }) =
 );
 
 const Pet: React.FC = () => {
-  const { pet, feed: feedPet, play: playWithPet, rest: cleanPet, deletePet } = usePet();
+  const { pet, loading, error, feed, play, rest: clean, deletePet } = usePet();
+
+  if (loading) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg text-center">
+        <p>Loading pet data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg text-center">
+        <p className="text-red-500">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!pet) return null;
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete your pet?')) {
-      console.log('Deleting pet...');
-      deletePet();
-      console.log('Pet deleted');
+      await deletePet();
     }
   };
 
@@ -48,20 +68,23 @@ const Pet: React.FC = () => {
 
       <div className="flex justify-center space-x-4 mb-4">
         <button
-          onClick={feedPet}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          onClick={feed}
+          disabled={loading}
+          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
         >
           Feed
         </button>
         <button
-          onClick={playWithPet}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          onClick={play}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
         >
           Play
         </button>
         <button
-          onClick={cleanPet}
-          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          onClick={clean}
+          disabled={loading}
+          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:bg-gray-400"
         >
           Clean
         </button>
@@ -70,7 +93,8 @@ const Pet: React.FC = () => {
       <div className="flex justify-center">
         <button
           onClick={handleDelete}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          disabled={loading}
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400"
         >
           Delete Pet
         </button>

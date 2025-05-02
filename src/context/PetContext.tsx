@@ -2,115 +2,176 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Pet, PetStats, PetType } from '../types/pet';
 
+const API_URL = 'http://localhost:3001/api';
+
+const getUserId = () => {
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('userId', userId);
+  }
+  return userId;
+};
+
 interface PetContextType {
   pet: Pet | null;
-  createPet: (name: string, type: string) => void;
-  deletePet: () => void;
-  feed: () => void;
-  play: () => void;
-  rest: () => void;
+  loading: boolean;
+  error: string | null;
+  createPet: (name: string, type: string) => Promise<void>;
+  deletePet: () => Promise<void>;
+  feed: () => Promise<void>;
+  play: () => Promise<void>;
+  rest: () => Promise<void>;
 }
 
 const PetContext = createContext<PetContextType | undefined>(undefined);
 
 export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [pet, setPet] = useState<Pet | null>(() => {
-    const savedPet = localStorage.getItem('pet');
-    return savedPet ? JSON.parse(savedPet) : null;
-  });
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const userId = getUserId();
 
   useEffect(() => {
-    if (pet) {
-      localStorage.setItem('pet', JSON.stringify(pet));
-    } else {
-      localStorage.removeItem('pet');
+    const fetchPet = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/pets/${userId}`);
+        const data = await response.json();
+        setPet(data.pet);
+      } catch (err) {
+        setError('Failed to fetch pet data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPet();
+  }, [userId]);
+
+  const createPet = async (name: string, type: string) => {
+    try {
+      setLoading(true);
+      const newPet: Pet = {
+        id: Math.random().toString(36).substr(2, 9),
+        name,
+        type: type as PetType,
+        stats: {
+          hunger: 30,
+          happiness: 70,
+          energy: 100,
+          cleanliness: 100
+        },
+        age: 0,
+        stage: 'baby',
+        lastInteraction: new Date()
+      };
+
+      const response = await fetch(`${API_URL}/pets/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPet),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPet(data.pet);
+      } else {
+        setError('Failed to create pet');
+      }
+    } catch (err) {
+      setError('Failed to create pet');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [pet]);
-
-  const feedPet = () => {
-    if (!pet) return;
-    setPet(prevPet => {
-      if (!prevPet) return null;
-      const currentHunger = prevPet.stats.hunger;
-      // Happiness increases more when pet is very hungry
-      const happinessBoost = currentHunger > 75 ? 20 : 10;
-      
-      return {
-        ...prevPet,
-        stats: {
-          ...prevPet.stats,
-          hunger: Math.max(0, prevPet.stats.hunger - 20),
-          happiness: Math.min(100, prevPet.stats.happiness + happinessBoost),
-          energy: Math.min(100, prevPet.stats.energy + 5)
-        },
-        lastInteraction: new Date()
-      };
-    });
   };
 
-  const playWithPet = () => {
-    if (!pet) return;
-    setPet(prevPet => {
-      if (!prevPet) return null;
-      // If pet is too hungry or tired, playing makes them less happy
-      const isHungry = prevPet.stats.hunger > 80;
-      const isTired = prevPet.stats.energy < 20;
-      const happinessChange = (isHungry || isTired) ? -5 : 20;
-      
-      return {
-        ...prevPet,
-        stats: {
-          ...prevPet.stats,
-          hunger: Math.min(100, prevPet.stats.hunger + 15),
-          happiness: Math.min(100, Math.max(0, prevPet.stats.happiness + happinessChange)),
-          energy: Math.max(0, prevPet.stats.energy - 15),
-          cleanliness: Math.max(0, prevPet.stats.cleanliness - 10)
-        },
-        lastInteraction: new Date()
-      };
-    });
+  const deletePet = async () => {
+    try {
+      setLoading(true);
+      await fetch(`${API_URL}/pets/${userId}`, {
+        method: 'DELETE',
+      });
+      setPet(null);
+    } catch (err) {
+      setError('Failed to delete pet');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const cleanPet = () => {
-    if (!pet) return;
-    setPet(prevPet => {
-      if (!prevPet) return null;
-      // Happiness boost is higher when pet is very dirty
-      const happinessBoost = prevPet.stats.cleanliness < 20 ? 15 : 5;
-      
-      return {
-        ...prevPet,
-        stats: {
-          ...prevPet.stats,
-          cleanliness: Math.min(100, prevPet.stats.cleanliness + 30),
-          happiness: Math.min(100, prevPet.stats.happiness + happinessBoost),
-          energy: Math.max(0, prevPet.stats.energy - 5)
-        },
-        lastInteraction: new Date()
-      };
-    });
+  const feedPet = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/pets/${userId}/feed`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPet(data.pet);
+      } else {
+        setError('Failed to feed pet');
+      }
+    } catch (err) {
+      setError('Failed to feed pet');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const playWithPet = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/pets/${userId}/play`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPet(data.pet);
+      } else {
+        setError('Failed to play with pet');
+      }
+    } catch (err) {
+      setError('Failed to play with pet');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cleanPet = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/pets/${userId}/clean`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPet(data.pet);
+      } else {
+        setError('Failed to clean pet');
+      }
+    } catch (err) {
+      setError('Failed to clean pet');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <PetContext.Provider value={{ 
       pet, 
-      createPet: (name: string, type: string) => {
-        setPet({
-          id: Math.random().toString(36).substr(2, 9),
-          name,
-          type: type as PetType,
-          stats: {
-            hunger: 30,     // Slightly hungry to encourage immediate interaction
-            happiness: 70,  // Happy but room for improvement
-            energy: 100,   // Full energy to start with
-            cleanliness: 100 // Perfectly clean at start
-          },
-          age: 0,
-          stage: 'baby',
-          lastInteraction: new Date()
-        });
-      }, 
-      deletePet: () => setPet(null),
+      loading,
+      error,
+      createPet, 
+      deletePet,
       feed: feedPet, 
       play: playWithPet, 
       rest: cleanPet 
