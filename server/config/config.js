@@ -1,4 +1,6 @@
+require('dotenv').config();
+
 module.exports = {
   port: process.env.PORT || 3001,
-  dataPath: 'data/pets.json'
+  environment: process.env.NODE_ENV || 'development'
 };

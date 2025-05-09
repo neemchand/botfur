@@ -1,4 +1,4 @@
-const petModel = require('../models/petModel');
+const petModel = require('./model');
 
 async function getPetByUserId(userId) {
   const data = await petModel.readPetData();
@@ -7,6 +7,7 @@ async function getPetByUserId(userId) {
 
 async function savePet(userId, petData) {
   const data = await petModel.readPetData();
+  console.log(data);
   data[userId] = petData;
   await petModel.writePetData(data);
   return petData;

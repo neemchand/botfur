@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, '..', 'data', 'pets.json');
+const DATA_FILE = path.join(__dirname, '..', '..', 'data', 'pets.json');
 
 async function initDataFile() {
   try {
@@ -19,8 +19,14 @@ async function initDataFile() {
 }
 
 async function readPetData() {
-  const data = await fs.readFile(DATA_FILE, 'utf8');
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(DATA_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    // If file doesn't exist or is invalid, initialize it
+    await initDataFile();
+    return {};
+  }
 }
 
 async function writePetData(data) {

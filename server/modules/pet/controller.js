@@ -1,10 +1,15 @@
-const petService = require('../services/petService');
-const { asyncHandler, createErrorResponse, successResponse } = require('../utils/controllerUtils');
+
+const petService = require('./service');
+const { asyncHandler, createErrorResponse, successResponse } = require('../../utils/controllerUtils');
 
 const getPet = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const pet = await petService.getPetByUserId(userId);
-  res.json({ pet });
+  if (!pet) {
+    throw createErrorResponse('Pet not found', 404);
+  }
+  
+  successResponse(res, { pet });
 });
 
 const createOrUpdatePet = asyncHandler(async (req, res) => {
@@ -13,15 +18,20 @@ const createOrUpdatePet = asyncHandler(async (req, res) => {
   const pet = await petService.savePet(userId, petData);
   
   const isNew = !req.body.id;
-  const messageKey = isNew ? 'success.pet.created' : 'success.pet.updated';
+  const message = isNew ? 'Pet created successfully' : 'Pet updated successfully';
   
-  successResponse(res, { pet }, messageKey);
+  successResponse(res, { pet }, message);
 });
 
 const deletePet = asyncHandler(async (req, res) => {
   const { userId } = req.params;
-  await petService.removePet(userId);
-  successResponse(res, {}, 'success.pet.deleted');
+  const success = await petService.removePet(userId);
+  
+  if (!success) {
+    throw createErrorResponse('Pet not found', 404);
+  }
+  
+  successResponse(res, {}, 'Pet deleted successfully');
 });
 
 const feedPet = asyncHandler(async (req, res) => {
@@ -29,10 +39,10 @@ const feedPet = asyncHandler(async (req, res) => {
   const pet = await petService.feedPet(userId);
   
   if (!pet) {
-    throw createErrorResponse('errors.pet.notFound', 404);
+    throw createErrorResponse('Pet not found', 404);
   }
   
-  successResponse(res, { pet }, 'success.pet.fed');
+  successResponse(res, { pet }, 'Pet fed successfully');
 });
 
 const playWithPet = asyncHandler(async (req, res) => {
@@ -40,10 +50,10 @@ const playWithPet = asyncHandler(async (req, res) => {
   const pet = await petService.playWithPet(userId);
   
   if (!pet) {
-    throw createErrorResponse('errors.pet.notFound', 404);
+    throw createErrorResponse('Pet not found', 404);
   }
   
-  successResponse(res, { pet }, 'success.pet.played');
+  successResponse(res, { pet }, 'Pet played with successfully');
 });
 
 const cleanPet = asyncHandler(async (req, res) => {
@@ -51,10 +61,10 @@ const cleanPet = asyncHandler(async (req, res) => {
   const pet = await petService.cleanPet(userId);
   
   if (!pet) {
-    throw createErrorResponse('errors.pet.notFound', 404);
+    throw createErrorResponse('Pet not found', 404);
   }
   
-  successResponse(res, { pet }, 'success.pet.cleaned');
+  successResponse(res, { pet }, 'Pet cleaned successfully');
 });
 
 module.exports = {

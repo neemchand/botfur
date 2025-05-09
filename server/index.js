@@ -2,9 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const config = require('./config/config');
-const petRoutes = require('./routes/petRoutes');
+const petRoutes = require('./modules/pet/routes');
 const errorHandler = require('./middleware/errorHandler');
-const petModel = require('./models/petModel');
+const { initDataFile } = require('./modules/pet/model');
 
 const app = express();
 
@@ -19,7 +19,7 @@ app.use('/api/pets', petRoutes);
 app.use(errorHandler);
 
 // Initialize data file and start server
-petModel.initDataFile()
+initDataFile()
   .then(() => {
     app.listen(config.port, () => {
       console.log(`Server running on port ${config.port}`);
